@@ -1,6 +1,7 @@
 import subprocess
 import datetime
 import argparse
+import os
 
 parser = argparse.ArgumentParser(description='Process a Dashcam MOV file\'s GPS Track, stops and get an equivalent GPX file')
 parser.add_argument('-V', '--video', required=True)
@@ -73,7 +74,11 @@ def parse_gps_track(et_out):
     gps_track_start = et_out.find("GPS")
     gps_track_end = et_out.find("Image Size")
     gps_track = et_out[gps_track_start:gps_track_end]
-    gps_track_arr = gps_track.split("\r\n")
+    if (os.name == 'nt'):
+        gps_track_arr = gps_track.split("\r\n")
+    if (os.name == 'posix'):
+        gps_track_arr = gps_track.split("\n")
+
     gps_track_arr.pop()
     return gps_track_arr
 def sign(x):
@@ -96,7 +101,7 @@ def gps_track_to_json(gps_track_arr):
     return
 
 def quick_trim(file, output, start, end):
-    trim_command = "ffmpeg -y -ss {} -to {} -i {} -c copy {}".format(start, end, file, output)
+    trim_command = "ffmpeg -y -i {} -ss {} -to {} -c copy {}".format(file, start, end, output)
     try:
         res = subprocess.check_output(trim_command, stderr=subprocess.STDOUT, shell=True)
     except subprocess.CalledProcessError as e:
@@ -154,7 +159,3 @@ dict_arr.append(dict)
 
 create_gpx(dict_arr)
 stops1 = stops_by_speed(dict_arr) # Array of start and end time in seconds relative to the video separated by a space
-
-for i in range(len(stops1)):
-    start, end = stops1[i].split(" ")
-    quick_trim(FILE, "out" + str(i + 1) + ".mov", start, end)
