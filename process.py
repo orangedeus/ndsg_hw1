@@ -95,6 +95,14 @@ def deg_to_dec(coord):
 def gps_track_to_json(gps_track_arr):
     return
 
+def quick_trim(file, output, start, end):
+    trim_command = "ffmpeg -y -ss {} -to {} -i {} -c copy {}".format(start, end, file, output)
+    try:
+        res = subprocess.check_output(trim_command, stderr=subprocess.STDOUT, shell=True)
+    except subprocess.CalledProcessError as e:
+        res = e.output
+    return res
+
 try:
     res = subprocess.check_output(command, stderr=subprocess.STDOUT, shell=True)
 except subprocess.CalledProcessError as e:
@@ -146,4 +154,7 @@ dict_arr.append(dict)
 
 create_gpx(dict_arr)
 stops1 = stops_by_speed(dict_arr) # Array of start and end time in seconds relative to the video separated by a space
-print(stops1)
+
+"""
+SPLICE HERE
+"""

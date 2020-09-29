@@ -6,9 +6,11 @@ Team 1
 * Splice video using data generated from previous image (ffmpeg) (WIP)
 ## Reqs and Dependencies
 
-* Exiftool
-* FFMPEG-Python
+The following should be in your path.
+
+* [Exiftool](https://exiftool.org/)
+* [FFMPEG](https://ffmpeg.org/)
 
 ## Instructions
 
-* Run `python process.py -V <video_directory> -O <gpx_output_file>`. An `exiftool.exe` must be in the same directory. (Available [here](https://exiftool.org/))
+* Run `python process.py -V <video_directory> -O <gpx_output_file>`. 
