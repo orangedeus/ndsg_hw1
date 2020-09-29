@@ -155,6 +155,6 @@ dict_arr.append(dict)
 create_gpx(dict_arr)
 stops1 = stops_by_speed(dict_arr) # Array of start and end time in seconds relative to the video separated by a space
 
-"""
-SPLICE HERE
-"""
+for i in range(len(stops1)):
+    start, end = stops1[i].split(" ")
+    quick_trim(FILE, "out" + str(i + 1) + ".mov", start, end)

@@ -1,0 +1,7 @@
+@INPROCEEDINGS{7391276,  author={C. {Kao} and C. {Lo} and K. {Lu}},  booktitle={2015 IEEE 5th International Conference on Consumer Electronics - Berlin (ICCE-Berlin)},   title={A personal video summarization system by integrating RFID and GPS information for marathon activities},   year={2015},  volume={},  number={},  pages={347-350},}
+
+@INPROCEEDINGS{7980238,  author={S. {Yi} and Z. {Hao} and Q. {Zhang} and Q. {Zhang} and W. {Shi} and Q. {Li}},  booktitle={2017 IEEE 37th International Conference on Distributed Computing Systems (ICDCS)},   title={LAVEA: Latency-Aware Video Analytics on Edge Computing Platform},   year={2017},  volume={},  number={},  pages={2573-2574},}
+
+@INPROCEEDINGS{8366976,  author={H. {Qiu} and X. {Liu} and S. {Rallapalli} and A. J. {Bency} and K. {Chan} and R. {Urgaonkar} and B. S. {Manjunath} and R. {Govindan}},  booktitle={2018 IEEE/ACM Third International Conference on Internet-of-Things Design and Implementation (IoTDI)},   title={Kestrel: Video Analytics for Augmented Multi-Camera Vehicle Tracking},   year={2018},  volume={},  number={},  pages={48-59},}
+
+@INPROCEEDINGS{9096491,  author={J. {King} and L. {Huang} and D. {Wu} and Y. {Zhou} and Y. C. {Lee}},  booktitle={2020 IEEE International Conference on Cloud Engineering (IC2E)},   title={EdgeSum: Edge-Based Video Summarization with Dash Cams},   year={2020},  volume={},  number={},  pages={40-48},}
