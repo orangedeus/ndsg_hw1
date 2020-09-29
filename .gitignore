@@ -1,5 +1,5 @@
-pyexiftool/
 data/
 *.gpx
+*.mov
 exiftool.exe
 MANIFEST
