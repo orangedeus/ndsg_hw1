@@ -6,10 +6,12 @@ import os
 parser = argparse.ArgumentParser(description='Process a Dashcam MOV file\'s GPS Track, stops and get an equivalent GPX file')
 parser.add_argument('-V', '--video', required=True)
 parser.add_argument('-O', '--output', required=False, default='out.gpx')
+parser.add_argument('-S', '--splice_name', required=False, default='out')
 args = parser.parse_args()
 #FILE = "data/2020_0924_120847_004.mov"
 FILE = args.video
 OUTPUT = args.output
+SPLICE = args.splice_name
 command = "exiftool -ee " + FILE
 
 def create_gpx(dict_arr):
@@ -65,6 +67,10 @@ def stops_by_speed(dict_arr):
             stops.append(stop_frame)
             stop_start = ""
             stop_end = ""
+    if (stop_start != ""):
+        rel_stop_start, rel_stop_end = process_time_frame(stop_start, last_stop, start_time)
+        stop_frame = rel_stop_start + " " + rel_stop_end
+        stops.append(stop_frame)
     return stops
 
 def time_to_sec(stop_start, stop_end):
@@ -142,7 +148,6 @@ for i in gps_track_arr:
     elif (i.find("GPS Track") != -1):
         dict["track"] = i.split(": ")[-1]
 dict_arr.append(dict)
-
 """for i in range(0, len(gps_track_arr), 8):
     dict = {}
     dict["date/time"] = gps_track_arr[i].split(": ")[-1]
@@ -159,3 +164,9 @@ dict_arr.append(dict)
 
 create_gpx(dict_arr)
 stops1 = stops_by_speed(dict_arr) # Array of start and end time in seconds relative to the video separated by a space
+
+for i in range(len(stops1)):
+    start, end = stops1[i].split(" ")
+    trim_res = quick_trim(FILE, SPLICE + "-" + str(i + 1) + ".mov", start, end)
+
+print("Processed using stops by speed...")
