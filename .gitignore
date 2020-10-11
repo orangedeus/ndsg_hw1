@@ -1,9 +1,11 @@
-.git
+.git/
+__pycache__/
 data/
-freeze/
+freezedetect/
 location/
 speed/
 *.gpx
 *.mov
+list.txt
 exiftool.exe
 MANIFEST

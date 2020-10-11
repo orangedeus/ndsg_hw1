@@ -51,7 +51,6 @@ def process_time_frame(stop_start, stop_end, start_time):
 
     return str(start.seconds), str(end.seconds)
 
-
 def stops_by_location(dict_arr):
     stops = []
     stop_start = ""
@@ -87,17 +86,10 @@ def stops_by_location(dict_arr):
 
             stop_start = ""
             stop_end = ""
-
-
-
+            
         stop_loc_start_lat = dict_arr[i]["latitude"]
         stop_loc_start_long = dict_arr[i]["longitude"]
-
-
-
-
         i+=1
-
     return stops
 
 ###########################################################
@@ -130,7 +122,6 @@ except subprocess.CalledProcessError as e:
 et_out = res.decode('utf-8')
 gps_track_arr = parse_gps_track(et_out)
 
-st = 0
 dict_arr = []
 dict = {}
 for i in gps_track_arr:

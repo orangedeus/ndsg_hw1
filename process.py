@@ -3,6 +3,7 @@ import datetime
 import argparse
 import os
 import shutil
+import timeit
 
 def sign(x):
     if x > 0:
@@ -13,23 +14,69 @@ def sign(x):
         return 0
 
 class Process:
-    def __init__(self, dir, out_gpx, out_vid):
+    def __init__(self, dir, out_gpx, out_vid, sens, noise):
         self.directory = dir
         self.output_gpx = out_gpx
         self.output_vid = out_vid
+        self.sensitivity = sens
+        self.noise = noise
 
     def start(self):
+        print('[-] Starting...')
+        start = timeit.default_timer()
         listdir = os.listdir(self.directory)
         concat_gps_track = self.concat_gps_track(listdir)
+        print('[-] Parsing...')
         dict_arr = self.gps_dict_arr(concat_gps_track)
         dict_arr2 = self.gps_dict_arr2(concat_gps_track)
+        print('[-] Creating GPX file...')
         self.create_gpx(dict_arr)
+        print('[-] Concatenating...')
         self.quick_concat(listdir)
+        print('[-] Getting stops...')
         stops1 = self.stops_by_speed(dict_arr)
+        print('--- STOPS BY SPEED ---')
+        for i in stops1:
+            print(i)
         stops2 = self.stops_by_location(dict_arr)
-
+        print('--- STOPS BY LOCATION ---')
+        for i in stops2:
+            print(i)
+        stops3 = self.clean_stops(self.stops_by_freezedetect(self.freezedetect(self.output_vid, self.sensitivity, self.noise)))
+        print('--- STOPS BY FREEZEDETECT ---')
+        for i in stops3:
+            print(i)
+        print('[-] Splicing...')
         self.splice("speed", stops1)
         self.splice("location", stops2)
+        self.splice("freezedetect", stops3)
+        stop = timeit.default_timer()
+        print('[-] Done! Time elapsed: {}s'.format(stop - start))
+
+    def stop_sens(self, stop, sensitivity):
+        start, end = stop.split(" ")
+        if (int(end) - int(start) < sensitivity):
+            return False
+        else:
+            return True
+    
+    def clean_stops(self, stops):
+        new_stops = []
+
+        prev_end = -1 * self.sensitivity
+        for i in stops:
+            start, end = i.split(" ")
+            start, end = int(start), int(end)
+
+            if start - prev_end < self.sensitivity:
+                prev_start, prev_end = new_stops.pop().split(" ")
+                new_stop = "{} {}".format(prev_start, end)
+                new_stops.append(new_stop)
+            else:
+                new_stops.append(i)
+            prev_end = end
+
+        return new_stops
 
     def exiftool_call(self, file):
         exif_command = "exiftool -ee {}".format(file)
@@ -51,7 +98,7 @@ class Process:
         except subprocess.CalledProcessError as e:
             res = e.output
 
-        concat_command = "ffmpeg -f concat -safe 0 -i list.txt -c copy {}".format(self.output_vid)
+        concat_command = "ffmpeg -y -f concat -safe 0 -i list.txt -c copy {}".format(self.output_vid)
 
         try:
             res = subprocess.check_output(concat_command, stderr=subprocess.STDOUT, shell=True)
@@ -181,13 +228,15 @@ class Process:
                 stop_end = last_stop
                 rel_stop_start, rel_stop_end = self.process_time_frame(stop_start, stop_end, start_time)
                 stop_frame = rel_stop_start + " " + rel_stop_end
-                stops.append(stop_frame)
+                if (self.stop_sens(stop_frame, self.sensitivity)):
+                    stops.append(stop_frame)
                 stop_start = ""
                 stop_end = ""
         if (stop_start != ""):
             rel_stop_start, rel_stop_end = self.process_time_frame(stop_start, last_stop, start_time)
             stop_frame = rel_stop_start + " " + rel_stop_end
-            stops.append(stop_frame)
+            if (self.stop_sens(stop_frame, self.sensitivity)):
+                stops.append(stop_frame)
         return stops
 
     def stops_by_location(self, dict_arr): # Complexity : O(TRACKPOINTS)
@@ -221,8 +270,8 @@ class Process:
                 rel_stop_start, rel_stop_end = self.process_time_frame(stop_start, stop_end, start_time)
                 if(rel_stop_start != rel_stop_end):
                     stop_frame = rel_stop_start + " " + rel_stop_end
-                    stops.append(stop_frame)
-
+                    if (self.stop_sens(stop_frame, self.sensitivity)):
+                        stops.append(stop_frame)
                 stop_start = ""
                 stop_end = ""
                 
@@ -261,14 +310,61 @@ class Process:
         except subprocess.CalledProcessError as e:
             res = e.output
         return res
+    
+    def freezedetect(self, file, sensitivity, noise):
+        command = "ffmpeg -i {} -vf \"freezedetect=n=-{}dB:d={}\" -map 0:v:0 -f null -".format(file, noise, sensitivity)
+        try:
+            res = subprocess.check_output(command, stderr=subprocess.STDOUT, shell=True)
+        except subprocess.CalledProcessError as e:
+            res = e.output
+        return res.decode('utf-8')
+
+    def get_sec(self, str):
+        sec = ""
+
+        for i in str:
+            if not(i.isnumeric()):
+                break
+            sec += i
+        return sec
+
+    def clean(self, str):
+        st = str.find("[freezedetect")
+        return str[st:]
+
+    def stops_by_freezedetect(self, res):
+        start = res.find("[freezedetect")
+        list = res[start:].split("\r\n")
+        for i in range(3):
+            list.pop()
+        
+        stops = []
+        stop = ""
+        for i in list:
+            
+            parts = self.clean(i).split(" ")
+            if i.find("freeze_start") != -1:
+                str = parts[4]
+                start = self.get_sec(str)
+                #print("start: ", str)
+            elif i.find("freeze_end") != -1:
+                str = parts[4]
+                end = self.get_sec(str)
+                #print("end: ", str)
+                stop = "{} {}".format(start, end)
+                if (self.stop_sens(stop, self.sensitivity)):
+                    stops.append(stop)
+        return stops
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-D', '--directory', required=False, default='data')
     parser.add_argument('-O', '--output_vid', required=False, default='output.mov')
     parser.add_argument('-OG', '--output_gpx', required=False, default='output.gpx')
+    parser.add_argument('-S', '--sensitivity', required=False, default=2)
+    parser.add_argument('-N', '--noise', required=False, default=35)
     args = parser.parse_args()
     try:
-        Process(dir=args.directory, out_vid=args.output_vid, out_gpx=args.output_gpx).start()
+        Process(dir=args.directory, out_vid=args.output_vid, out_gpx=args.output_gpx, sens=args.sensitivity, noise=args.noise).start()
     except Exception as e:
         print('[-] Directory may not be accessible, or: %s' % e)
